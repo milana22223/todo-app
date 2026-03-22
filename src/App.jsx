@@ -1,64 +1,95 @@
-import { useState, useEffect } from 'react';
-import AddTodoForm from './components/AddTodoForm';
-import TodoFilters from './components/TodoFilters';
-import TodoItem from './components/TodoItem';
+// ... импорты остаются без изменений
 
 function App() {
-  // Состояние для списка задач
   const [todos, setTodos] = useState(() => {
-    // Загружаем сохраненные задачи из localStorage
     const saved = localStorage.getItem('todos');
     return saved ? JSON.parse(saved) : [];
   });
 
-  // Состояние для текущего фильтра
   const [filter, setFilter] = useState('all');
+  
+  // 🔹 НОВОЕ: Состояние для темы
+  const [isDark, setIsDark] = useState(false);
 
-  // Сохраняем задачи в localStorage при каждом изменении
   useEffect(() => {
     localStorage.setItem('todos', JSON.stringify(todos));
   }, [todos]);
 
-  // Добавление новой задачи
   const addTodo = (text) => {
-    const newTodo = {
-      id: Date.now(),
-      text: text,
-      completed: false
-    };
+    const newTodo = { id: Date.now(), text, completed: false };
     setTodos([...todos, newTodo]);
   };
 
-  // Переключение статуса задачи
   const toggleTodo = (id) => {
     setTodos(todos.map(todo =>
       todo.id === id ? { ...todo, completed: !todo.completed } : todo
     ));
   };
 
-  // Удаление задачи
   const deleteTodo = (id) => {
     setTodos(todos.filter(todo => todo.id !== id));
   };
 
-  // Фильтрация задач
+  // 🔹 НОВОЕ: Функция редактирования задачи
+  const editTodo = (id, newText) => {
+    setTodos(todos.map(todo =>
+      todo.id === id ? { ...todo, text: newText } : todo
+    ));
+  };
+
   const filteredTodos = todos.filter(todo => {
     if (filter === 'active') return !todo.completed;
     if (filter === 'completed') return todo.completed;
-    return true; // 'all'
+    return true;
   });
 
-  // Подсчет активных задач
   const activeCount = todos.filter(todo => !todo.completed).length;
 
+  // 🔹 НОВОЕ: Динамические стили в зависимости от темы
+  const appStyles = {
+    maxWidth: '600px',
+    margin: '0 auto',
+    padding: '20px',
+    fontFamily: 'Arial, sans-serif',
+    backgroundColor: isDark ? '#333' : '#fff',
+    color: isDark ? '#fff' : '#333',
+    minHeight: '100vh',
+    transition: 'all 0.3s'
+  };
+
   return (
-    <div style={{
-      maxWidth: '600px',
-      margin: '0 auto',
-      padding: '20px',
-      fontFamily: 'Arial, sans-serif'
-    }}>
-      <h1 style={{ textAlign: 'center', color: '#333' }}>Менеджер задач</h1>
+    <div style={appStyles}>
+      {/* 🔹 НОВОЕ: Заголовок с кнопкой переключения темы */}
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center',
+        marginBottom: '20px'
+      }}>
+        <h1 style={{ 
+          textAlign: 'center', 
+          color: isDark ? '#fff' : '#333',
+          margin: 0,
+          flex: 1 
+        }}>
+          Менеджер задач
+        </h1>
+        <button
+          onClick={() => setIsDark(!isDark)}
+          style={{
+            padding: '8px 16px',
+            background: isDark ? '#fff' : '#333',
+            color: isDark ? '#333' : '#fff',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            fontSize: '14px',
+            marginLeft: '10px'
+          }}
+        >
+          {isDark ? '☀️ Светлая' : '🌙 Тёмная'}
+        </button>
+      </div>
       
       <AddTodoForm onAdd={addTodo} />
       
@@ -69,7 +100,7 @@ function App() {
       />
       
       {filteredTodos.length === 0 ? (
-        <p style={{ textAlign: 'center', color: '#999' }}>
+        <p style={{ textAlign: 'center', color: isDark ? '#aaa' : '#999' }}>
           {filter === 'all' ? 'Задач пока нет' : 
            filter === 'active' ? 'Нет активных задач' : 'Нет выполненных задач'}
         </p>
@@ -81,6 +112,7 @@ function App() {
               task={todo}
               onToggle={toggleTodo}
               onDelete={deleteTodo}
+              onEdit={editTodo}  // 🔹 НОВОЕ: передаём функцию редактирования
             />
           ))}
         </ul>
